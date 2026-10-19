@@ -19,3 +19,29 @@ Rplots.pdf
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Local authoring, scratch work and release/host-check helpers
+/dev/
+/scratch/
+/tmp/
+/host-checks/
+/ci-artifacts/
+/*.py
+/*.R
+/*.r
+/*.ps1
+/*.sh
+
+# Keep only maintained runtime and build helpers in scripts/.
+# Add an exception when introducing a helper used by the skill or CI.
+/scripts/*
+!/scripts/style.R
+!/scripts/install-fonts-windows.ps1
+!/scripts/package_skill.py
+
+# Keep the maintained CI suite; ignore ad hoc evaluations and galleries.
+/tests/*
+!/tests/README.md
+!/tests/run-tests.R
+!/tests/check-sizing.R
+!/tests/check-release.py
