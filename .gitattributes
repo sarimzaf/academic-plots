@@ -1,0 +1,12 @@
+# Normalise text line endings in the repo; leave the working copy to the OS.
+* text=auto
+
+*.R      text diff=r
+*.md     text
+*.csv    text
+
+*.png    binary
+*.pdf    binary
+*.svg    binary
+*.ttf    binary
+*.tiff   binary

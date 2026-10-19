@@ -1,0 +1,75 @@
+name: Validate skill and bundle
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+      - name: Install test dependencies
+        shell: Rscript {0}
+        run: |
+          install.packages(c("ggplot2", "scales", "ggrepel", "patchwork", "systemfonts", "ragg"),
+                           repos = getOption("repos"))
+      - name: Install bundled fonts on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/install-fonts-windows.ps1
+      - name: Install bundled fonts on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.local/share/fonts/academic-plots"
+          for face in Regular Bold Italic BoldItalic; do
+            cp "fonts/Libre_Franklin/static/LibreFranklin-$face.ttf" "$HOME/.local/share/fonts/academic-plots/"
+          done
+          fc-cache -f
+      - name: Test current helpers and templates
+        env:
+          ACADEMIC_PLOTS_REQUIRE_FONT: 'true'
+        run: Rscript --vanilla tests/run-tests.R tests/output
+      - name: Check and build the bundle
+        run: |
+          python tests/check-release.py
+          python scripts/package_skill.py
+      - name: Smoke test an extracted install from another directory
+        shell: python
+        run: |
+          import os, pathlib, subprocess, tempfile, zipfile
+          archive = pathlib.Path("dist/academic-plots.zip").resolve()
+          with tempfile.TemporaryDirectory() as directory:
+              target = pathlib.Path(directory)
+              with zipfile.ZipFile(archive) as bundle:
+                  bundle.extractall(target)
+              subprocess.run(["Rscript", "--vanilla", str(target / "academic-plots/examples/quickstart.R"),
+                              str(target / "output")], cwd=target, check=True)
+              assert (target / "output/heatmap_title.png").is_file()
+              assert (target / "output/heatmap_no_title.png").is_file()
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-${{ matrix.os }}
+          path: tests/output/
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Linux'
+        with:
+          name: academic-plots-bundle
+          path: dist/academic-plots.zip*

@@ -1,0 +1,21 @@
+# Local settings and sessions
+.claude/settings.local.json
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+__pycache__/
+*.pyc
+
+# Generated figures, release bundles and validation output
+dist/
+output/
+tests/output/
+Rplots.pdf
+*.tiff
+*.tif
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
